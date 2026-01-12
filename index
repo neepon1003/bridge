@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Redirecting...</title>
+<script>
+  // URLから ?name=ショートカット名 を取得
+  const params = new URLSearchParams(window.location.search);
+  const shortcutName = params.get('name');
+
+  if (shortcutName) {
+    // ショートカットを起動
+    window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcutName);
+    // 画面表示
+    document.body.innerHTML = "<div style='padding:20px;font-family:sans-serif;'><h1>🚀 " + shortcutName + " を起動中...</h1><p>確認が出たら「開く」を押してください。</p></div>";
+  } else {
+    document.body.innerHTML = "ショートカット名が指定されていません。";
+  }
+</script>
+</head>
+<body></body>
+</html>
