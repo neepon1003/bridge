@@ -6,28 +6,35 @@
 <script>
   const params = new URLSearchParams(window.location.search);
   
-  // パラメータを取得
-  const shortcut = params.get('name'); // ショートカット用
+  const shortcut = params.get('name'); // ショートカット名
   const file = params.get('file');     // Obsidianファイル名
-  const vault = params.get('vault');   // Obsidian保管庫名（省略可）
+  const vault = params.get('vault');   // Obsidian保管庫名
+  const openApp = params.get('open');  // アプリ起動のみ用
 
-  // 1. ショートカットの場合 (?name=...)
+  // 1. ショートカット起動
   if (shortcut) {
     window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
     document.body.innerHTML = "<h1>🚀 ショートカット: " + shortcut + " を起動中...</h1>";
   } 
-  // 2. Obsidianの場合 (?file=...)
-  else if (file) {
-    let uri = 'obsidian://open?file=' + encodeURIComponent(file);
-    if (vault) {
-      uri += '&vault=' + encodeURIComponent(vault);
+  // 2. Obsidian起動 (ファイル、保管庫、または ?open=1 がある場合)
+  else if (file || vault || openApp) {
+    let uri = 'obsidian://open';
+    let queries = [];
+
+    if (vault) queries.push('vault=' + encodeURIComponent(vault));
+    if (file)  queries.push('file=' + encodeURIComponent(file));
+
+    // パラメータがある場合のみ ? をつけて連結
+    if (queries.length > 0) {
+      uri += '?' + queries.join('&');
     }
+
     window.location.href = uri;
-    document.body.innerHTML = "<h1>💎 Obsidian: " + file + " を開いています...</h1>";
+    document.body.innerHTML = "<h1>💎 Obsidianを起動しています...</h1>";
   }
-  // 3. エラー
+  // 3. 何も指定がない場合
   else {
-    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>または<br>?file=Obsidianのノート名";
+    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>?file=ノート名<br>?open=1 (アプリ起動のみ)";
   }
 </script>
 </head>
