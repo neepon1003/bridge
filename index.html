@@ -4,17 +4,30 @@
 <meta charset="utf-8">
 <title>Redirecting...</title>
 <script>
-  // URLから ?name=ショートカット名 を取得
   const params = new URLSearchParams(window.location.search);
-  const shortcutName = params.get('name');
+  
+  // パラメータを取得
+  const shortcut = params.get('name'); // ショートカット用
+  const file = params.get('file');     // Obsidianファイル名
+  const vault = params.get('vault');   // Obsidian保管庫名（省略可）
 
-  if (shortcutName) {
-    // ショートカットを起動
-    window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcutName);
-    // 画面表示
-    document.body.innerHTML = "<div style='padding:20px;font-family:sans-serif;'><h1>🚀 " + shortcutName + " を起動中...</h1><p>確認が出たら「開く」を押してください。</p></div>";
-  } else {
-    document.body.innerHTML = "ショートカット名が指定されていません。";
+  // 1. ショートカットの場合 (?name=...)
+  if (shortcut) {
+    window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
+    document.body.innerHTML = "<h1>🚀 ショートカット: " + shortcut + " を起動中...</h1>";
+  } 
+  // 2. Obsidianの場合 (?file=...)
+  else if (file) {
+    let uri = 'obsidian://open?file=' + encodeURIComponent(file);
+    if (vault) {
+      uri += '&vault=' + encodeURIComponent(vault);
+    }
+    window.location.href = uri;
+    document.body.innerHTML = "<h1>💎 Obsidian: " + file + " を開いています...</h1>";
+  }
+  // 3. エラー
+  else {
+    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>または<br>?file=Obsidianのノート名";
   }
 </script>
 </head>
