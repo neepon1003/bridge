@@ -36,6 +36,9 @@
   else {
     document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>?file=ノート名<br>?open=1 (アプリ起動のみ)";
   }
+  settimeout(function() {
+    window.close();
+  }, 5000);
 </script>
 </head>
 <body></body>
