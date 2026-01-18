@@ -5,75 +5,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Redirecting...</title>
 <style>
+  /* 1. 全体をダークモードにする */
+  body {
+    background-color: #111; /* 背景は黒 */
+    color: #666;            /* 文字は暗いグレー */
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+  }
+  h1 { font-size: 1.2rem; font-weight: normal; }
+
+  /* 2. ×ボタンのスタイル（ダークモード用） */
   .close-button {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: #f0f0f0;
-        transition: all 0.3s ease;
-      }
-      .close-button:hover {
-        background-color: #e0e0e0;
-        transform: scale(1.1);
-      }
-      .close-button:active {
-        transform: scale(0.95);
-      }
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;  /* タップしやすいサイズ */
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #333; /* ボタンの色：濃いグレー */
+    color: #fff;            /* バツ印の色：白 */
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent; /* タップ時の枠線を消す */
+  }
+  .close-button:active {
+    transform: scale(0.9);
+    background-color: #555;
+  }
 </style>
 <script>
   const params = new URLSearchParams(window.location.search);
   
-  const shortcut = params.get('name'); // ショートカット名
-  const file = params.get('file');     // Obsidianファイル名
-  const vault = params.get('vault');   // Obsidian保管庫名
-  const openApp = params.get('open');  // アプリ起動のみ用
+  const shortcut = params.get('name');
+  const file = params.get('file');
+  const vault = params.get('vault');
+  const openApp = params.get('open');
 
-  // 1. ショートカット起動
-  if (shortcut) {
-    window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
-    document.body.innerHTML = "<h1>🚀 " + shortcut + " を起動中...</h1>";
-  } 
-  // 2. Obsidian起動
-  else if (file || vault || openApp) {
-    let uri = 'obsidian://open';
-    let queries = [];
+  // 起動処理
+  function launch() {
+    let uri = '';
+    let msg = '';
 
-    if (vault) queries.push('vault=' + encodeURIComponent(vault));
-    if (file)  queries.push('file=' + encodeURIComponent(file));
-
-    if (queries.length > 0) {
-      uri += '?' + queries.join('&');
+    if (shortcut) {
+      uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
+      msg = "🚀 " + shortcut;
+    } else if (file || vault || openApp) {
+      uri = 'obsidian://open';
+      let queries = [];
+      if (vault) queries.push('vault=' + encodeURIComponent(vault));
+      if (file)  queries.push('file=' + encodeURIComponent(file));
+      if (queries.length > 0) uri += '?' + queries.join('&');
+      msg = "💎 Obsidian";
     }
 
-    window.location.href = uri;
-    document.body.innerHTML = "<h1>💎 Obsidianを起動しています...</h1>";
-  }
-  // 3. パラメータなし
-  else {
-    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>?file=ノート名<br>?open=1";
+    if (uri) {
+      document.getElementById('status').innerHTML = "<h1>" + msg + " を起動中...</h1>";
+      window.location.href = uri;
+      
+      // 自動クローズ（念のため）
+      setTimeout(() => { window.close(); }, 5000);
+    } else {
+      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=... または ?file=...</small>";
+    }
   }
 
-  // 5秒後にウィンドウを閉じる（iOSでは動作しない可能性がありますが、念のため実行）
-  setTimeout(function() {
-    window.close();
-  }, 5000);
+  window.onload = launch;
 </script>
 </head>
 <body>
-  <body>
-    <button class="close-button" onclick="window.close()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
-        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
-      </svg>
-    </button>
+  <div id="status">Loading...</div>
+
+  <button class="close-button" onclick="window.close()" aria-label="Close">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+    </svg>
+  </button>
 </body>
 </html>
