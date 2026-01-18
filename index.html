@@ -2,7 +2,23 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Redirecting...</title>
+<style>
+  /* 画面を黒くして、文字を目立たなくするスタイル */
+  body {
+    background-color: #111; /* ほぼ黒 */
+    color: #555;            /* 文字は暗いグレー */
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+  }
+  h1 { font-size: 1.2rem; font-weight: normal; }
+</style>
 <script>
   const params = new URLSearchParams(window.location.search);
   
@@ -14,9 +30,9 @@
   // 1. ショートカット起動
   if (shortcut) {
     window.location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
-    document.body.innerHTML = "<h1>🚀 ショートカット: " + shortcut + " を起動中...</h1>";
+    document.body.innerHTML = "<h1>🚀 " + shortcut + " を起動中...</h1>";
   } 
-  // 2. Obsidian起動 (ファイル、保管庫、または ?open=1 がある場合)
+  // 2. Obsidian起動
   else if (file || vault || openApp) {
     let uri = 'obsidian://open';
     let queries = [];
@@ -24,7 +40,6 @@
     if (vault) queries.push('vault=' + encodeURIComponent(vault));
     if (file)  queries.push('file=' + encodeURIComponent(file));
 
-    // パラメータがある場合のみ ? をつけて連結
     if (queries.length > 0) {
       uri += '?' + queries.join('&');
     }
@@ -32,10 +47,12 @@
     window.location.href = uri;
     document.body.innerHTML = "<h1>💎 Obsidianを起動しています...</h1>";
   }
-  // 3. 何も指定がない場合
+  // 3. パラメータなし
   else {
-    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>?file=ノート名<br>?open=1 (アプリ起動のみ)";
+    document.body.innerHTML = "パラメータが指定されていません。<br>?name=ショートカット名<br>?file=ノート名<br>?open=1";
   }
+
+  // 5秒後にウィンドウを閉じる（iOSでは動作しない可能性がありますが、念のため実行）
   setTimeout(function() {
     window.close();
   }, 5000);
