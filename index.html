@@ -7,8 +7,8 @@
 <style>
   /* 1. 全体をダークモードにする */
   body {
-    background-color: #111; /* 背景は黒 */
-    color: #666;            /* 文字は暗いグレー */
+    background-color: #111;
+    color: #666;
     font-family: sans-serif;
     display: flex;
     justify-content: center;
@@ -19,12 +19,12 @@
   }
   h1 { font-size: 1.2rem; font-weight: normal; }
 
-  /* 2. ×ボタンのスタイル（ダークモード用） */
+  /* 2. ×ボタンのスタイル */
   .close-button {
     position: fixed;
     top: 20px;
     right: 20px;
-    width: 44px;  /* タップしやすいサイズ */
+    width: 44px;
     height: 44px;
     border: none;
     border-radius: 50%;
@@ -32,10 +32,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #333; /* ボタンの色：濃いグレー */
-    color: #fff;            /* バツ印の色：白 */
+    background-color: #333;
+    color: #fff;
     transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent; /* タップ時の枠線を消す */
+    -webkit-tap-highlight-color: transparent;
   }
   .close-button:active {
     transform: scale(0.9);
@@ -45,20 +45,45 @@
 <script>
   const params = new URLSearchParams(window.location.search);
   
-  const shortcut = params.get('name');
-  const file = params.get('file');
-  const vault = params.get('vault');
-  const openApp = params.get('open');
+  // --- パラメータ取得 ---
+  const shortcut = params.get('name');       // ショートカット
+  const file = params.get('file');           // Obsidianファイル
+  const vault = params.get('vault');         // Obsidian保管庫
+  const openObsidian = params.get('open');   // Obsidian起動
+  
+  // UpNote用パラメータ
+  const upnote = params.get('upnote');         // 起動 or 新規
+  const filterId = params.get('filter');       // ★追加: フィルターID
+  const notebookId = params.get('notebook');   // ★追加: ノートブックID
 
-  // 起動処理
+  // --- 起動処理 ---
   function launch() {
     let uri = '';
     let msg = '';
 
+    // 1. ショートカット
     if (shortcut) {
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
       msg = "🚀 " + shortcut;
-    } else if (file || vault || openApp) {
+    } 
+    // 2. UpNote (フィルター / ノートブック / 新規 / 起動)
+    else if (upnote || filterId || notebookId) {
+      if (upnote === 'new') {
+        uri = 'upnote://x-callback-url/note/new';
+        msg = "🐘 新規メモ作成";
+      } else if (filterId) {
+        uri = 'upnote://x-callback-url/openFilter?filterId=' + encodeURIComponent(filterId);
+        msg = "🐘 フィルターを開く";
+      } else if (notebookId) {
+        uri = 'upnote://x-callback-url/openNotebook?notebookId=' + encodeURIComponent(notebookId);
+        msg = "🐘 ノートブックを開く";
+      } else {
+        uri = 'upnote://';
+        msg = "🐘 UpNote";
+      }
+    }
+    // 3. Obsidian
+    else if (file || vault || openObsidian) {
       uri = 'obsidian://open';
       let queries = [];
       if (vault) queries.push('vault=' + encodeURIComponent(vault));
@@ -67,14 +92,13 @@
       msg = "💎 Obsidian";
     }
 
+    // --- 実行 ---
     if (uri) {
       document.getElementById('status').innerHTML = "<h1>" + msg + " を起動中...</h1>";
       window.location.href = uri;
-      
-      // 自動クローズ（念のため）
-      setTimeout(() => { window.close(); }, 3000);
+      setTimeout(() => { window.close(); }, 5000);
     } else {
-      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=... または ?file=...</small>";
+      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=, ?file=, ?upnote=1 など</small>";
     }
   }
 
