@@ -47,14 +47,16 @@
   
   // --- パラメータ取得 ---
   const shortcut = params.get('name');       // ショートカット
+  
+  // Obsidian用 (open -> obsidian に変更)
   const file = params.get('file');           // Obsidianファイル
   const vault = params.get('vault');         // Obsidian保管庫
-  const openObsidian = params.get('open');   // Obsidian起動
+  const openObsidian = params.get('obsidian'); // ★変更: Obsidian起動
   
-  // UpNote用パラメータ
-  const upnote = params.get('upnote');         // 起動 or 新規
-  const filterId = params.get('filter');       // ★追加: フィルターID
-  const notebookId = params.get('notebook');   // ★追加: ノートブックID
+  // UpNote用
+  const upnote = params.get('upnote');       
+  const filterId = params.get('filter');      
+  const notebookId = params.get('notebook');  
 
   // --- 起動処理 ---
   function launch() {
@@ -66,7 +68,7 @@
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
       msg = "🚀 " + shortcut;
     } 
-    // 2. UpNote (フィルター / ノートブック / 新規 / 起動)
+    // 2. UpNote
     else if (upnote || filterId || notebookId) {
       if (upnote === 'new') {
         uri = 'upnote://x-callback-url/note/new';
@@ -82,13 +84,15 @@
         msg = "🐘 UpNote";
       }
     }
-    // 3. Obsidian
+    // 3. Obsidian (パラメータ名を変更)
     else if (file || vault || openObsidian) {
       uri = 'obsidian://open';
       let queries = [];
       if (vault) queries.push('vault=' + encodeURIComponent(vault));
       if (file)  queries.push('file=' + encodeURIComponent(file));
+      
       if (queries.length > 0) uri += '?' + queries.join('&');
+      
       msg = "💎 Obsidian";
     }
 
@@ -98,7 +102,7 @@
       window.location.href = uri;
       setTimeout(() => { window.close(); }, 5000);
     } else {
-      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=, ?file=, ?upnote=1 など</small>";
+      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=, ?obsidian=1, ?upnote=1 など</small>";
     }
   }
 
