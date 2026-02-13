@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Redirecting...</title>
+<title>Bridge to Obsidian</title>
 <style>
   body {
     background-color: #111;
@@ -25,14 +25,22 @@
     display: none; /* 初期状態は非表示 */
     background-color: #7B1FA2;
     color: white;
-    padding: 15px 30px;
-    font-size: 1.2rem;
+    padding: 18px 40px;
+    font-size: 1.3rem;
     font-weight: bold;
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 50px; /* 丸みを帯びさせる */
     margin-top: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    border: 1px solid #9c27b0;
+    box-shadow: 0 4px 15px rgba(123, 31, 162, 0.4);
+    border: 2px solid #9c27b0;
+    transition: transform 0.1s, background-color 0.2s;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #manual-btn:active {
+    transform: scale(0.95);
+    background-color: #6A1B9A;
   }
   
   h1 { font-size: 1.2rem; font-weight: normal; color: #fff; margin-bottom: 0.5rem; }
@@ -65,12 +73,12 @@
     const upnote = params.get('upnote');
 
     let uri = '';
-    let msg = '';
+    let label = '';
 
     // --- URI生成ロジック ---
     if (shortcut) {
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
-      msg = "🚀 Shortcut";
+      label = "ショートカットを起動";
     }
     else if (uid || command || filepath || file || vault) {
       if (uid || command || filepath || heading || block) {
@@ -80,14 +88,14 @@
         
         if (uid) {
            queries.push('uid=' + encodeURIComponent(uid));
-           msg = "💎 Opening Note (UID)";
+           label = "ノートを開く (UID)";
         } else if (filepath) {
            queries.push('filepath=' + encodeURIComponent(filepath));
-           msg = "💎 Opening Note (Path)";
+           label = "ノートを開く (Path)";
         } else if (command) {
-           if (!msg) msg = "💎 Command";
+           label = "コマンドを実行";
         } else {
-           msg = "💎 Obsidian";
+           label = "Obsidianを開く";
         }
 
         if (command) queries.push('commandid=' + encodeURIComponent(command));
@@ -102,30 +110,46 @@
         if (vault) queries.push('vault=' + encodeURIComponent(vault));
         if (file)  queries.push('file=' + encodeURIComponent(file));
         if (queries.length > 0) uri += '?' + queries.join('&');
-        msg = "💎 Obsidian";
+        label = "Obsidianを開く";
       }
     }
     else if (upnote) {
        uri = (upnote === 'new') ? 'upnote://x-callback-url/note/new' : 'upnote://';
-       msg = "🐘 UpNote";
+       label = "UpNoteを開く";
     }
 
-    // --- 実行 ---
+    // --- 実行準備 ---
     if (uri) {
-      statusText.textContent = msg + "...";
+      // 1. テキスト設定
+      statusText.textContent = "準備完了";
       debugText.textContent = uri; 
       
-      manualBtn.href = uri;
-      manualBtn.style.display = 'inline-block'; // ボタンを強制表示
-
-      console.log("Redirecting in 500ms to:", uri);
-      setTimeout(() => {
+      // 2. ボタン設定
+      manualBtn.textContent = label;
+      manualBtn.style.display = 'inline-block';
+      
+      // 3. クリックイベント（自動遷移はしない）
+      manualBtn.onclick = function(e) {
+        e.preventDefault(); // デフォルトのリンク動作を防止し、JSで制御
+        
+        // アプリ起動
         window.location.href = uri;
-      }, 500);
+        
+        // UIフィードバック
+        statusText.textContent = "起動しました";
+        manualBtn.textContent = "Done ✓";
+        manualBtn.style.backgroundColor = "#333";
+        manualBtn.style.borderColor = "#555";
+        
+        // 1秒後にタブを閉じる試み
+        setTimeout(() => {
+          window.close();
+        }, 1000);
+      };
       
     } else {
-      statusText.textContent = "パラメータエラー";
-      debugText.innerHTML = "URLに ?vault=... が含まれていません。<br>正しいリンクを使用してください。";
+      statusText.textContent = "リンクが無効です";
+      debugText.innerHTML = "パラメータ(?vault=...等)が必要です";
     }
   }
 
@@ -134,7 +158,9 @@
 </head>
 <body>
   <h1 id="status-text">Loading...</h1>
-  <a id="manual-btn" href="#">ここをクリックして開く</a>
+  
+  <a id="manual-btn" href="#">Open</a>
+  
   <p id="debug-url"></p>
 </body>
 </html>
