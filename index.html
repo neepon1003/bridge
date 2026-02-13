@@ -72,9 +72,7 @@
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
       msg = "🚀 Shortcut";
     }
-    // Obsidian
     else if (uid || command || filepath || file || vault) {
-      // Advanced URI (scheme: obsidian://adv-uri)
       if (uid || command || filepath || heading || block) {
         uri = 'obsidian://adv-uri'; 
         let queries = [];
@@ -98,7 +96,6 @@
         
         if (queries.length > 0) uri += '?' + queries.join('&');
       }
-      // Standard URI
       else {
         uri = 'obsidian://open';
         let queries = [];
@@ -108,7 +105,6 @@
         msg = "💎 Obsidian";
       }
     }
-    // UpNote
     else if (upnote) {
        uri = (upnote === 'new') ? 'upnote://x-callback-url/note/new' : 'upnote://';
        msg = "🐘 UpNote";
@@ -116,14 +112,12 @@
 
     // --- 実行 ---
     if (uri) {
-      // 1. 画面更新 (まず表示させる)
       statusText.textContent = msg + "...";
-      debugText.textContent = uri; // デバッグ用にURLを表示
+      debugText.textContent = uri; 
       
       manualBtn.href = uri;
-      manualBtn.style.display = 'inline-block'; // ボタンを表示
+      manualBtn.style.display = 'inline-block'; // ボタンを強制表示
 
-      // 2. 遅延リダイレクト (0.5秒待つ)
       console.log("Redirecting in 500ms to:", uri);
       setTimeout(() => {
         window.location.href = uri;
@@ -131,7 +125,7 @@
       
     } else {
       statusText.textContent = "パラメータエラー";
-      debugText.innerHTML = "使用例: ?vault=Name&uid=...";
+      debugText.innerHTML = "URLに ?vault=... が含まれていません。<br>正しいリンクを使用してください。";
     }
   }
 
@@ -140,9 +134,7 @@
 </head>
 <body>
   <h1 id="status-text">Loading...</h1>
-  
   <a id="manual-btn" href="#">ここをクリックして開く</a>
-  
   <p id="debug-url"></p>
 </body>
 </html>
