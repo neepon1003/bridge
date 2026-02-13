@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,16 +8,44 @@
   /* 1. 全体をダークモードにする */
   body {
     background-color: #111;
-    color: #666;
-    font-family: sans-serif;
+    color: #bbb; /* 少し明るくして視認性向上 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
     text-align: center;
   }
-  h1 { font-size: 1.2rem; font-weight: normal; }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: normal;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+  /* ヘルプ画面用のスタイル */
+  .help-container {
+    text-align: left;
+    display: inline-block;
+    background: #222;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .help-container h2 { font-size: 1.2rem; color: #fff; margin-top: 0; }
+  .help-container ul { padding-left: 20px; margin: 10px 0; }
+  .help-container li { margin-bottom: 8px; line-height: 1.4; }
+  .help-container code {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: #e6e6e6;
+    font-size: 0.9em;
+  }
 
   /* 2. ×ボタンのスタイル */
   .close-button {
@@ -36,6 +64,7 @@
     color: #fff;
     transition: all 0.2s ease;
     -webkit-tap-highlight-color: transparent;
+    z-index: 100;
   }
   .close-button:active {
     transform: scale(0.9);
@@ -43,23 +72,21 @@
   }
 </style>
 <script>
-  const params = new URLSearchParams(window.location.search);
-  
-  // --- パラメータ取得 ---
-  const shortcut = params.get('name');       // ショートカット
-  
-  // Obsidian用 (open -> obsidian に変更)
-  const file = params.get('file');           // Obsidianファイル
-  const vault = params.get('vault');         // Obsidian保管庫
-  const openObsidian = params.get('obsidian'); // ★変更: Obsidian起動
-  
-  // UpNote用
-  const upnote = params.get('upnote');       
-  const filterId = params.get('filter');      
-  const notebookId = params.get('notebook');  
-
-  // --- 起動処理 ---
   function launch() {
+    const params = new URLSearchParams(window.location.search);
+    const statusDiv = document.getElementById('status');
+    
+    // --- パラメータ取得 ---
+    const shortcut = params.get('name');
+    // Obsidian用
+    const file = params.get('file');
+    const vault = params.get('vault');
+    const openObsidian = params.get('obsidian');
+    // UpNote用
+    const upnote = params.get('upnote');
+    const filterId = params.get('filter');
+    const notebookId = params.get('notebook');
+
     let uri = '';
     let msg = '';
 
@@ -67,7 +94,7 @@
     if (shortcut) {
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
       msg = "🚀 " + shortcut;
-    } 
+    }
     // 2. UpNote
     else if (upnote || filterId || notebookId) {
       if (upnote === 'new') {
@@ -84,7 +111,7 @@
         msg = "🐘 UpNote";
       }
     }
-    // 3. Obsidian (パラメータ名を変更)
+    // 3. Obsidian
     else if (file || vault || openObsidian) {
       uri = 'obsidian://open';
       let queries = [];
@@ -92,25 +119,67 @@
       if (file)  queries.push('file=' + encodeURIComponent(file));
       
       if (queries.length > 0) uri += '?' + queries.join('&');
-      
       msg = "💎 Obsidian";
     }
 
-    // --- 実行 ---
+    // --- 実行判定 ---
     if (uri) {
-      document.getElementById('status').innerHTML = "<h1>" + msg + " を起動中...</h1>";
+      // 【修正】セキュリティ対策: innerHTMLを使わず、DOM要素を作成してテキストを設定
+      statusDiv.innerHTML = ''; // 内容をクリア
+      const h1 = document.createElement('h1');
+      h1.textContent = msg + " を起動中..."; // 安全にテキストを設定
+      statusDiv.appendChild(h1);
+
       window.location.href = uri;
-      setTimeout(() => { window.close(); }, 5000);
+      // 5秒後に自動で閉じる試み
+      setTimeout(() => {
+        // window.close() はスクリプトで開いたウィンドウでしか機能しないことが多いが念のため残す
+        try { window.close(); } catch(e) {}
+      }, 5000);
     } else {
-      document.getElementById('status').innerHTML = "パラメータエラー<br><small>?name=, ?obsidian=1, ?upnote=1 など</small>";
+      // パラメータがない場合はヘルプを表示
+      showHelp(statusDiv);
     }
+  }
+
+  // ヘルプ画面表示関数
+  function showHelp(container) {
+    container.innerHTML = `
+      <div class="help-container">
+        <h2>🛠️ Usage Guide</h2>
+        <p>URLパラメータを指定してアプリを起動します。</p>
+        <ul>
+          <li>
+            <strong>Apple Shortcuts:</strong><br>
+            <code>?name=ShortcutName</code>
+          </li>
+          <li>
+            <strong>UpNote:</strong>
+            <ul>
+              <li>新規作成: <code>?upnote=new</code></li>
+              <li>開くのみ: <code>?upnote=1</code></li>
+              <li>フィルター: <code>?filter=ID</code></li>
+            </ul>
+          </li>
+          <li>
+            <strong>Obsidian:</strong>
+            <ul>
+              <li>開くのみ: <code>?obsidian=1</code></li>
+              <li>特定ノート: <code>?vault=VaultName&file=NoteName</code></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    `;
   }
 
   window.onload = launch;
 </script>
 </head>
 <body>
-  <div id="status">Loading...</div>
+  <div id="status">
+    <h1>Loading...</h1>
+  </div>
 
   <button class="close-button" onclick="window.close()" aria-label="Close">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
