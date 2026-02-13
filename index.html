@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Redirecting...</title>
 <style>
-  /* 1. 全体をダークモードにする */
+  /* 全体スタイル */
   body {
     background-color: #111;
-    color: #bbb; /* 少し明るくして視認性向上 */
+    color: #bbb;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     display: flex;
     flex-direction: column;
@@ -20,13 +20,9 @@
     box-sizing: border-box;
     text-align: center;
   }
-  h1 {
-    font-size: 1.5rem;
-    font-weight: normal;
-    color: #fff;
-    margin-bottom: 1rem;
-  }
-  /* ヘルプ画面用のスタイル */
+  h1 { font-size: 1.5rem; font-weight: normal; color: #fff; margin-bottom: 1rem; }
+  
+  /* ヘルプ画面 */
   .help-container {
     text-align: left;
     display: inline-block;
@@ -34,6 +30,8 @@
     padding: 20px 30px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    max-width: 600px;
+    width: 100%;
   }
   .help-container h2 { font-size: 1.2rem; color: #fff; margin-top: 0; }
   .help-container ul { padding-left: 20px; margin: 10px 0; }
@@ -45,30 +43,14 @@
     font-family: monospace;
     color: #e6e6e6;
     font-size: 0.9em;
+    word-break: break-all;
   }
-
-  /* 2. ×ボタンのスタイル */
   .close-button {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 44px;
-    height: 44px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #333;
-    color: #fff;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-    z-index: 100;
-  }
-  .close-button:active {
-    transform: scale(0.9);
-    background-color: #555;
+    top: 20px; right: 20px; width: 44px; height: 44px;
+    border: none; border-radius: 50%; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    background-color: #333; color: #fff; z-index: 100;
   }
 </style>
 <script>
@@ -78,11 +60,23 @@
     
     // --- パラメータ取得 ---
     const shortcut = params.get('name');
-    // Obsidian用
-    const file = params.get('file');
+    
+    // Obsidian (Common)
     const vault = params.get('vault');
+    
+    // Obsidian (Standard URI)
+    const file = params.get('file');
+
+    // Obsidian (Advanced URI)
+    const uid = params.get('uid');            // UID
+    const filepath = params.get('filepath');  // Filepath (Adv-URI)
+    const command = params.get('command');    // Command ID
+    const heading = params.get('heading');    // ★追加: 見出し
+    const block = params.get('block');        // ★追加: ブロックID
+    
     const openObsidian = params.get('obsidian');
-    // UpNote用
+    
+    // UpNote
     const upnote = params.get('upnote');
     const filterId = params.get('filter');
     const notebookId = params.get('notebook');
@@ -95,7 +89,53 @@
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
       msg = "🚀 " + shortcut;
     }
-    // 2. UpNote
+    // 2. Obsidian
+    else if (uid || command || filepath || file || vault || openObsidian) {
+      
+      // A. Advanced URI (UID / Filepath / Command)
+      if (uid || command || filepath) {
+        uri = 'obsidian://advanced-uri';
+        let queries = [];
+        if (vault) queries.push('vault=' + encodeURIComponent(vault));
+        
+        // Target
+        if (uid) {
+           queries.push('uid=' + encodeURIComponent(uid));
+           msg = "💎 Obsidian (UID)";
+        } else if (filepath) {
+           queries.push('filepath=' + encodeURIComponent(filepath));
+           msg = "💎 Obsidian (Adv-File)";
+        }
+        
+        // Action
+        if (command) {
+           queries.push('commandid=' + encodeURIComponent(command));
+           if (!msg) msg = "💎 Obsidian (Command)";
+        }
+        
+        // Sub-target (Heading / Block) ★ここを追加
+        if (heading) queries.push('heading=' + encodeURIComponent(heading));
+        if (block)   queries.push('block=' + encodeURIComponent(block));
+        
+        if (queries.length > 0) uri += '?' + queries.join('&');
+      }
+      // B. Standard URI (File Path)
+      else if (file) {
+        uri = 'obsidian://open';
+        let queries = [];
+        if (vault) queries.push('vault=' + encodeURIComponent(vault));
+        queries.push('file=' + encodeURIComponent(file));
+        uri += '?' + queries.join('&');
+        msg = "💎 Obsidian (File)";
+      }
+      // C. Just Open
+      else {
+         uri = 'obsidian://open'; 
+         if (vault) uri += '?vault=' + encodeURIComponent(vault);
+         msg = "💎 Obsidian";
+      }
+    }
+    // 3. UpNote
     else if (upnote || filterId || notebookId) {
       if (upnote === 'new') {
         uri = 'upnote://x-callback-url/note/new';
@@ -111,62 +151,35 @@
         msg = "🐘 UpNote";
       }
     }
-    // 3. Obsidian
-    else if (file || vault || openObsidian) {
-      uri = 'obsidian://open';
-      let queries = [];
-      if (vault) queries.push('vault=' + encodeURIComponent(vault));
-      if (file)  queries.push('file=' + encodeURIComponent(file));
-      
-      if (queries.length > 0) uri += '?' + queries.join('&');
-      msg = "💎 Obsidian";
-    }
 
-    // --- 実行判定 ---
+    // --- 実行 ---
     if (uri) {
-      // 【修正】セキュリティ対策: innerHTMLを使わず、DOM要素を作成してテキストを設定
-      statusDiv.innerHTML = ''; // 内容をクリア
+      statusDiv.innerHTML = ''; 
       const h1 = document.createElement('h1');
-      h1.textContent = msg + " を起動中..."; // 安全にテキストを設定
+      h1.textContent = msg + " を起動中...";
       statusDiv.appendChild(h1);
-
+      
+      console.log("Opening URI:", uri);
       window.location.href = uri;
-      // 5秒後に自動で閉じる試み
-      setTimeout(() => {
-        // window.close() はスクリプトで開いたウィンドウでしか機能しないことが多いが念のため残す
-        try { window.close(); } catch(e) {}
-      }, 5000);
+      setTimeout(() => { try { window.close(); } catch(e) {} }, 5000);
     } else {
-      // パラメータがない場合はヘルプを表示
       showHelp(statusDiv);
     }
   }
 
-  // ヘルプ画面表示関数
   function showHelp(container) {
     container.innerHTML = `
       <div class="help-container">
-        <h2>🛠️ Usage Guide</h2>
+        <h2>🛠️ Usage Guide (Ultimate)</h2>
         <p>URLパラメータを指定してアプリを起動します。</p>
         <ul>
-          <li>
-            <strong>Apple Shortcuts:</strong><br>
-            <code>?name=ShortcutName</code>
+          <li><strong>Obsidian (Advanced URI):</strong><br>
+            <code>?vault=Name&uid=UUID</code> <span style="color:#4CAF50;">推奨</span><br>
+            <code>...&heading=Section</code> (見出しへ)<br>
+            <code>...&block=BlockID</code> (ブロックへ)
           </li>
-          <li>
-            <strong>UpNote:</strong>
-            <ul>
-              <li>新規作成: <code>?upnote=new</code></li>
-              <li>開くのみ: <code>?upnote=1</code></li>
-              <li>フィルター: <code>?filter=ID</code></li>
-            </ul>
-          </li>
-          <li>
-            <strong>Obsidian:</strong>
-            <ul>
-              <li>開くのみ: <code>?obsidian=1</code></li>
-              <li>特定ノート: <code>?vault=VaultName&file=NoteName</code></li>
-            </ul>
+          <li><strong>Obsidian (Standard):</strong><br>
+            <code>?vault=Name&file=Path/To/Note</code>
           </li>
         </ul>
       </div>
@@ -177,10 +190,7 @@
 </script>
 </head>
 <body>
-  <div id="status">
-    <h1>Loading...</h1>
-  </div>
-
+  <div id="status"><h1>Loading...</h1></div>
   <button class="close-button" onclick="window.close()" aria-label="Close">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
       <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
