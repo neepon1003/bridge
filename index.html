@@ -20,10 +20,10 @@
     text-align: center;
   }
   
-  /* メインのボタン */
-  .manual-button {
-    display: inline-block;
-    background-color: #7B1FA2; /* Obsidian Purple */
+  /* ボタンのスタイル */
+  #manual-btn {
+    display: none; /* 初期状態は非表示 */
+    background-color: #7B1FA2;
     color: white;
     padding: 15px 30px;
     font-size: 1.2rem;
@@ -32,42 +32,26 @@
     border-radius: 8px;
     margin-top: 20px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    transition: transform 0.1s;
     border: 1px solid #9c27b0;
   }
-  .manual-button:active {
-    transform: scale(0.95);
-    background-color: #6A1B9A;
-  }
-
+  
   h1 { font-size: 1.2rem; font-weight: normal; color: #fff; margin-bottom: 0.5rem; }
-  p.debug-url {
+  
+  #debug-url {
     font-family: monospace;
-    font-size: 0.8rem;
-    color: #555;
+    font-size: 0.7rem;
+    color: #444;
+    margin-top: 30px;
     word-break: break-all;
-    margin-top: 20px;
     max-width: 90%;
   }
-
-  /* ヘルプ */
-  .help-container {
-    text-align: left;
-    display: inline-block;
-    background: #222;
-    padding: 20px;
-    border-radius: 12px;
-    margin-top: 20px;
-    max-width: 600px;
-  }
-  .help-container h2 { font-size: 1rem; color: #eee; margin-top: 0; }
-  .help-container code { background: #333; padding: 2px 4px; border-radius: 4px; }
 </style>
 <script>
   function launch() {
     const params = new URLSearchParams(window.location.search);
-    const statusDiv = document.getElementById('status');
-    const actionArea = document.getElementById('action-area');
+    const statusText = document.getElementById('status-text');
+    const manualBtn = document.getElementById('manual-btn');
+    const debugText = document.getElementById('debug-url');
     
     // パラメータ取得
     const shortcut = params.get('name');
@@ -79,22 +63,20 @@
     const heading = params.get('heading');
     const block = params.get('block');
     const upnote = params.get('upnote');
-    const filterId = params.get('filter');
-    const notebookId = params.get('notebook');
 
     let uri = '';
     let msg = '';
 
-    // URI生成ロジック
+    // --- URI生成ロジック ---
     if (shortcut) {
       uri = 'shortcuts://run-shortcut?name=' + encodeURIComponent(shortcut);
-      msg = "🚀 " + shortcut;
+      msg = "🚀 Shortcut";
     }
-    // Obsidian (Advanced URI & Standard)
+    // Obsidian
     else if (uid || command || filepath || file || vault) {
-      // 優先: Advanced URI (scheme: obsidian://adv-uri)
+      // Advanced URI (scheme: obsidian://adv-uri)
       if (uid || command || filepath || heading || block) {
-        uri = 'obsidian://adv-uri'; // あなたの実績に合わせて adv-uri を採用
+        uri = 'obsidian://adv-uri'; 
         let queries = [];
         if (vault) queries.push('vault=' + encodeURIComponent(vault));
         
@@ -105,9 +87,9 @@
            queries.push('filepath=' + encodeURIComponent(filepath));
            msg = "💎 Opening Note (Path)";
         } else if (command) {
-           if (!msg) msg = "💎 Running Command";
+           if (!msg) msg = "💎 Command";
         } else {
-           msg = "💎 Opening Vault";
+           msg = "💎 Obsidian";
         }
 
         if (command) queries.push('commandid=' + encodeURIComponent(command));
@@ -116,55 +98,51 @@
         
         if (queries.length > 0) uri += '?' + queries.join('&');
       }
-      // フォールバック: Standard URI
+      // Standard URI
       else {
         uri = 'obsidian://open';
         let queries = [];
         if (vault) queries.push('vault=' + encodeURIComponent(vault));
         if (file)  queries.push('file=' + encodeURIComponent(file));
         if (queries.length > 0) uri += '?' + queries.join('&');
-        msg = "💎 Opening Obsidian";
+        msg = "💎 Obsidian";
       }
     }
     // UpNote
-    else if (upnote || filterId || notebookId) {
-       // ... (UpNoteロジック省略: 前と同じ)
-       if (upnote === 'new') uri = 'upnote://x-callback-url/note/new';
-       else uri = 'upnote://';
+    else if (upnote) {
+       uri = (upnote === 'new') ? 'upnote://x-callback-url/note/new' : 'upnote://';
        msg = "🐘 UpNote";
     }
 
-    // 実行
+    // --- 実行 ---
     if (uri) {
-      // 1. ステータス表示
-      statusDiv.innerHTML = `<h1>${msg}...</h1>`;
+      // 1. 画面更新 (まず表示させる)
+      statusText.textContent = msg + "...";
+      debugText.textContent = uri; // デバッグ用にURLを表示
       
-      // 2. 手動ボタンの設置 (自動で飛ばない場合用)
-      actionArea.innerHTML = `
-        <a href="${uri}" class="manual-button">ここをクリックして開く</a>
-        <p class="debug-url">Target: ${uri}</p>
-      `;
+      manualBtn.href = uri;
+      manualBtn.style.display = 'inline-block'; // ボタンを表示
 
-      // 3. 自動リダイレクト試行
-      console.log("Redirecting to:", uri);
-      window.location.href = uri;
-
-      // 自動クローズはあえて無効化（手動ボタンが必要な場合があるため）
-      // setTimeout(() => { window.close(); }, 5000); 
+      // 2. 遅延リダイレクト (0.5秒待つ)
+      console.log("Redirecting in 500ms to:", uri);
+      setTimeout(() => {
+        window.location.href = uri;
+      }, 500);
+      
     } else {
-      showHelp(actionArea);
+      statusText.textContent = "パラメータエラー";
+      debugText.innerHTML = "使用例: ?vault=Name&uid=...";
     }
-  }
-
-  function showHelp(container) {
-    container.innerHTML = `<div class="help-container"><h2>パラメータが必要です</h2><p>例: ?vault=MyVault&uid=...</div>`;
   }
 
   window.onload = launch;
 </script>
 </head>
 <body>
-  <div id="status"><h1>Loading...</h1></div>
-  <div id="action-area"></div>
+  <h1 id="status-text">Loading...</h1>
+  
+  <a id="manual-btn" href="#">ここをクリックして開く</a>
+  
+  <p id="debug-url"></p>
 </body>
 </html>
